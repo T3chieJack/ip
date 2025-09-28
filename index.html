@@ -1,81 +1,49 @@
 <!doctype html>
-<html lang="en"> 
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>What’s My IP?</title>
-  <meta name="description" content="A tiny, privacy-friendly page that shows your public IPv4 and IPv6 addresses.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🖥️</text></svg>">
+  <title>What's My IP?</title>
+  <meta name="description" content="Shows your public IPv4/IPv6 and best-effort local device IPs. Client-side only.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23121826'/%3E%3Ctext x='32' y='40' font-size='26' text-anchor='middle' fill='%23e6edf3'%3EIP%3C/text%3E%3C/svg%3E">
   <style>
-    :root {
-      --bg: #0b0f17;
-      --card: #121826;
-      --text: #e6edf3;
-      --muted: #9fb1c1;
-      --accent: #4f8cff;
-      --accent-2: #71d2ff;
-      --ring: rgba(79,140,255,0.4);
-      --danger: #ff6166;
-    }
-    @media (prefers-color-scheme: light) {
-      :root { --bg:#f4f7fb; --card:#ffffff; --text:#0b0f17; --muted:#5a6b79; --ring:rgba(79,140,255,0.25); }
-    }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      background: radial-gradient(1200px 800px at 10% -10%, rgba(79,140,255,0.20), transparent 60%),
-                  radial-gradient(900px 700px at 110% 110%, rgba(113,210,255,0.20), transparent 60%),
-                  var(--bg);
-      color: var(--text);
-      display: grid; place-items:center; padding: 24px;
-    }
-    .card {
-      width: 100%; max-width: 760px; background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)) , var(--card);
-      border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-      padding: 28px; position: relative; overflow: hidden;
-    }
-    .card::after { content:""; position:absolute; inset:-1px; border-radius: 24px; padding:1px; background: linear-gradient(120deg, rgba(79,140,255,.55), rgba(113,210,255,.25), transparent 60%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; }
-    header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
-    h1 { font-size: clamp(22px, 2.6vw, 28px); margin:0; letter-spacing:.2px; }
-    .muted { color: var(--muted); font-size: 14px; }
-    .ip {
-      font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: .3px;
-      font-size: clamp(28px, 6.5vw, 56px); line-height: 1.1; margin: 10px 0 16px;
-      word-break: break-word;
-    }
-    .btns { display:flex; flex-wrap:wrap; gap:10px; }
-    button {
-      appearance: none; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: var(--text);
-      padding: 10px 14px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: transform .05s ease, border-color .2s ease, background .2s ease;
-      display:inline-flex; align-items:center; gap:8px;
-    }
-    button:hover { border-color: var(--accent); }
-    button:active { transform: translateY(1px); }
-    .primary { background: linear-gradient(180deg, rgba(79,140,255,.22), rgba(79,140,255,.14)); border-color: var(--accent); }
-    .status { margin-top: 10px; min-height: 22px; }
-    .status.ok { color: var(--muted); }
-    .status.err { color: var(--danger); }
-    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 6px; border:1px solid rgba(255,255,255,.15); }
-    .footer { margin-top: 22px; font-size: 13px; color: var(--muted); display:flex; gap:12px; flex-wrap:wrap; }
-    .spin { width: 1em; height: 1em; border-radius: 999px; border: 3px solid rgba(255,255,255,.2); border-top-color: var(--accent); animation: spin 1s linear infinite; display:inline-block; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-    hr { border:none; border-top:1px solid rgba(255,255,255,0.08); margin:18px 0; }
-    details { margin-top: 16px; }
-    details pre { background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; overflow:auto; }
+    :root { --bg:#0b0f17; --card:#121826; --text:#e6edf3; --muted:#9fb1c1; --accent:#4f8cff; --danger:#ff6166; }
+    @media (prefers-color-scheme: light){ :root{ --bg:#f4f7fb; --card:#ffffff; --text:#0b0f17; --muted:#5a6b79; } }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial; background: var(--bg); color:var(--text); display:grid; place-items:center; padding:24px; }
+    .card{ width:100%; max-width:780px; background: var(--card); border:1px solid rgba(255,255,255,.08); border-radius:24px; box-shadow:0 20px 60px rgba(0,0,0,.35); padding:28px; }
+    header{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+    h1{ margin:0; font-size: clamp(22px, 2.6vw, 28px); letter-spacing:.2px; }
+    .muted{ color:var(--muted); font-size:14px; }
+    section{ margin-top:10px; }
+    .label{ color:var(--muted); margin-bottom:4px; }
+    .ip{ font-variant-numeric: tabular-nums; font-weight:700; letter-spacing:.3px; font-size: clamp(24px, 5.8vw, 48px); line-height:1.1; margin:6px 0 12px; word-break: break-word; }
+    .btns{ display:flex; flex-wrap:wrap; gap:10px; }
+    button{ appearance:none; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); color:var(--text); padding:10px 14px; border-radius:14px; font-weight:600; cursor:pointer; transition: transform .05s ease, border-color .2s ease, background .2s ease; }
+    button:hover{ border-color: var(--accent); }
+    button:active{ transform: translateY(1px); }
+    .primary{ background: linear-gradient(180deg, rgba(79,140,255,.22), rgba(79,140,255,.14)); border-color: var(--accent); }
+    .status{ margin-top:10px; min-height:22px; }
+    .status.ok{ color:var(--muted); }
+    .status.err{ color:var(--danger); }
+    .kbd{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: rgba(255,255,255,.06); padding:2px 6px; border-radius:6px; border:1px solid rgba(255,255,255,.15); }
+    .spin{ width:1em; height:1em; border-radius:999px; border:3px solid rgba(255,255,255,.2); border-top-color: var(--accent); display:inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
+    hr{ border:none; border-top:1px solid rgba(255,255,255,.08); margin:18px 0; }
+    details pre{ background: rgba(0,0,0,.25); padding:12px; border-radius:12px; overflow:auto; }
   </style>
 </head>
 <body>
   <main class="card" role="main" aria-live="polite">
     <header>
-      <h1>What’s My IP?</h1>
+      <h1>What's My IP?</h1>
       <div class="muted">Client-side only • No logs</div>
     </header>
 
+    <!-- Public IPv4 -->
     <section aria-labelledby="v4-heading">
-      <h2 id="v4-heading" class="sr-only">IPv4</h2>
-      <div class="muted">Your IPv4 address</div>
+      <div id="v4-heading" class="label">Your <strong>public</strong> IPv4 address (as seen by websites)</div>
       <div id="ip4" class="ip"><span class="spin" aria-hidden="true"></span> <span class="muted">Fetching...</span></div>
       <div class="btns">
         <button id="copy4" class="primary" disabled>Copy IPv4</button>
@@ -85,9 +53,9 @@
 
     <hr />
 
+    <!-- Public IPv6 -->
     <section aria-labelledby="v6-heading">
-      <h2 id="v6-heading" class="sr-only">IPv6</h2>
-      <div class="muted">Your IPv6 address</div>
+      <div id="v6-heading" class="label">Your <strong>public</strong> IPv6 address (as seen by websites)</div>
       <div id="ip6" class="ip"><span class="spin" aria-hidden="true"></span> <span class="muted">Fetching...</span></div>
       <div class="btns">
         <button id="copy6" class="primary" disabled>Copy IPv6</button>
@@ -95,200 +63,217 @@
       </div>
     </section>
 
+    <hr />
+
+    <!-- Local device IPs -->
+    <section aria-labelledby="local-heading">
+      <div id="local-heading" class="label">Your <strong>local/device</strong> IPs (best effort via WebRTC)</div>
+      <div id="ipLocal" class="ip"><span class="spin" aria-hidden="true"></span> <span class="muted">Detecting...</span></div>
+      <div class="btns">
+        <button id="copyLocal" class="primary" disabled>Copy Local IPs</button>
+        <button id="refreshLocal">Refresh Local</button>
+      </div>
+      <div class="muted" style="margin-top:6px;font-size:13px;">Note: Some browsers mask local IPs; results can be empty. Private IPv4 ranges include 10.x.x.x, 172.16-31.x.x, 192.168.x.x. IPv6 local are usually fe80:: (link-local) or fc00::/7 (ULA).</div>
+    </section>
+
     <div id="status" class="status ok" role="status"></div>
 
     <details>
       <summary>Diagnostics & tests</summary>
-      <div class="muted" style="margin:8px 0">This section runs small client-side tests to ensure parsing and copy guards work.</div>
-      <div class="btns" style="margin-bottom:8px">
-        <button id="run-tests">Run tests</button>
-      </div>
+      <div class="muted" style="margin:8px 0">Runs client-side checks for validators and parsing.</div>
+      <div class="btns" style="margin-bottom:8px"><button id="run-tests">Run tests</button></div>
       <pre id="test-log" aria-live="polite"></pre>
     </details>
 
-    <div class="footer">
-      <div>Powered by <span class="kbd">fetch()</span> + <a href="https://www.ipify.org/" target="_blank" rel="noopener">ipify</a>.</div>
-      <div>Open source — view <a href="https://github.com/" target="_blank" rel="noopener">source</a>.</div>
+    <div class="footer" style="margin-top:18px;">
+      <div>Powered by <span class="kbd">fetch()</span> + ipify + WebRTC.</div>
+      <div class="muted">Public IPs show the address seen by websites. Local IPs are device/LAN addresses.</div>
     </div>
   </main>
 
   <script>
-    // ---------- Utilities ----------
+    // ===== Utilities =====
     const $ = (id) => document.getElementById(id);
     const ip4El = $('ip4');
     const ip6El = $('ip6');
+    const ipLocalEl = $('ipLocal');
     const statusEl = $('status');
     const copy4 = $('copy4');
     const copy6 = $('copy6');
+    const copyLocal = $('copyLocal');
     const refresh4 = $('refresh4');
     const refresh6 = $('refresh6');
+    const refreshLocal = $('refreshLocal');
 
-    function setLoading(el) {
-      el.innerHTML = '<span class="spin" aria-hidden="true"></span> <span class="muted">Fetching...</span>';
+    const v4re = /^(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+    function isIPv4(s){ return v4re.test(s); }
+    function isPrivateIPv4(s){
+      if (!isIPv4(s)) return false;
+      const p = s.split('.').map(Number);
+      return p[0] === 10 || (p[0] === 172 && p[1] >= 16 && p[1] <= 31) || (p[0] === 192 && p[1] === 168);
     }
+    // IPv6: accept typical forms (full, :: compressed, v4-mapped). This is permissive but safe for display/copy.
+    const v6re = /^(?:(?:[A-Fa-f0-9]{1,4}:){7}[A-Fa-f0-9]{1,4}|(?:[A-Fa-f0-9]{1,4}:){1,7}:|:(?::[A-Fa-f0-9]{1,4}){1,7}|(?:[A-Fa-f0-9]{1,4}:){1,6}:[A-Fa-f0-9]{1,4}|(?:[A-Fa-f0-9]{1,4}:){1,5}(?::[A-Fa-f0-9]{1,4}){1,2}|(?:[A-Fa-f0-9]{1,4}:){1,4}(?::[A-Fa-f0-9]{1,4}){1,3}|(?:[A-Fa-f0-9]{1,4}:){1,3}(?::[A-Fa-f0-9]{1,4}){1,4}|(?:[A-Fa-f0-9]{1,4}:){1,2}(?::[A-Fa-f0-9]{1,4}){1,5}|[A-Fa-f0-9]{1,4}:(?::[A-Fa-f0-9]{1,4}){1,6}|(?:(?:[A-Fa-f0-9]{1,4}:){6})(?:\d{1,3}\.){3}\d{1,3}|(?:(?:[A-Fa-f0-9]{1,4}:){0,5}[A-Fa-f0-9]{1,4}::(?:[A-Fa-f0-9]{1,4}:){0,5})(?:\d{1,3}\.){3}\d{1,3}|::(?:[A-Fa-f0-9]{1,4}:){0,5}(?:\d{1,3}\.){3}\d{1,3}|(?:[A-Fa-f0-9]{1,4}:){0,5}:((?:\d{1,3}\.){3}\d{1,3}))$/;
+    function isIPv6(s){ return v6re.test(s); }
+    function isLocalIPv6(s){ return /^fe80:/i.test(s) || /^fc[0-9a-f]/i.test(s) || /^fd[0-9a-f]/i.test(s); }
 
-    function renderIP(el, ip) {
-      el.textContent = ip;
-    }
+    function setLoading(el, text){ el.innerHTML = '<span class="spin" aria-hidden="true"></span> <span class="muted">' + (text || 'Fetching...') + '</span>'; }
+    function renderText(el, t){ el.textContent = t; }
+    function setStatus(msg, ok){ statusEl.textContent = msg; statusEl.className = 'status ' + (ok ? 'ok' : 'err'); }
 
-    function setStatus(msg, ok = true) {
-      statusEl.textContent = msg;
-      statusEl.className = 'status ' + (ok ? 'ok' : 'err');
-    }
-
-    function isValidIPv4(ip) {
-      // 0-255.0-255.0-255.0-255
-      const re = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
-      return re.test(ip);
-    }
-
-    function isPlausibleIPv6(ip) {
-      // Heuristic: contains ':' and only hex, ':', or dots (to allow v4-mapped)
-      return typeof ip === 'string' && ip.length >= 2 && ip.length <= 100 && /:/.test(ip) && /^[0-9A-Fa-f:.]+$/.test(ip);
-    }
-
-    function isPlausibleIP(ip) {
-      return isValidIPv4(ip) || isPlausibleIPv6(ip);
-    }
-
-    async function getJSON(url, { timeoutMs = 8000 } = {}) {
-      const ctl = new AbortController();
-      const t = setTimeout(() => ctl.abort(), timeoutMs);
-      const res = await fetch(url, { cache: 'no-store', headers: { 'Accept': 'application/json' }, signal: ctl.signal });
-      clearTimeout(t);
+    async function getJSON(url){
+      const res = await fetch(url, { cache:'no-store', headers:{ 'Accept':'application/json' } });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
-      if (!data || typeof data.ip !== 'string' || !data.ip) throw new Error('Bad response');
+      if (!data || typeof data.ip !== 'string') throw new Error('Bad response');
       return data.ip.trim();
     }
 
-    function parseCloudflareTrace(text) {
-      const lines = String(text).split(/\r?\n/);
-      const entries = lines
-        .map((l) => l.includes('=') ? l.split('=') : null)
-        .filter(Boolean);
-      const obj = Object.fromEntries(entries);
-      return obj;
+    function parseTrace(text){
+      const entries = String(text).split(/\r?\n/).map(l=>{ const i=l.indexOf('='); return i>0 ? [l.slice(0,i), l.slice(i+1)] : null; }).filter(Boolean);
+      return Object.fromEntries(entries);
     }
 
-    function enableCopy(btn, on) { btn.disabled = !on; }
-
-    async function copyTextSafe(text) {
-      if (typeof text !== 'string') throw new Error('No text');
-      const toCopy = text.trim();
-      if (!toCopy) throw new Error('Nothing to copy');
-      if (!isPlausibleIP(toCopy)) throw new Error('Not an IP address');
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        return navigator.clipboard.writeText(toCopy);
-      }
-      // Fallback
-      const ta = document.createElement('textarea');
-      ta.value = toCopy; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.top = '-9999px';
-      document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); } finally { document.body.removeChild(ta); }
-    }
-
-    // ---------- Fetchers ----------
-    async function fetchV4() {
-      setLoading(ip4El); enableCopy(copy4, false);
-      try {
+    // ===== Public IPv4/IPv6 =====
+    async function fetchV4(){
+      setLoading(ip4El, 'Fetching...'); copy4.disabled = true;
+      try{
         const ip = await getJSON('https://api.ipify.org?format=json');
-        renderIP(ip4El, ip); enableCopy(copy4, true);
-        setStatus('IPv4 fetched from api.ipify.org', true);
-      } catch (e) {
-        ip4El.innerHTML = '<span class="muted">IPv4 unavailable</span>';
-        setStatus('IPv4 error: ' + (e && e.message ? e.message : 'Network error'), false);
-      }
-    }
-
-    async function fetchV6() {
-      setLoading(ip6El); enableCopy(copy6, false);
-      try {
-        const ip = await getJSON('https://api64.ipify.org?format=json'); // returns v6 on IPv6 networks; may return v4 otherwise
-        renderIP(ip6El, ip); enableCopy(copy6, true);
-        setStatus('IPv6 fetched from api64.ipify.org', true);
-      } catch (e) {
-        // Fallback: Cloudflare trace (text)
-        try {
-          const res = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache: 'no-store' });
+        if (isIPv4(ip)) { renderText(ip4El, ip); copy4.disabled = false; setStatus('IPv4 fetched from api.ipify.org', true); return; }
+        throw new Error('Invalid IPv4');
+      }catch(_){
+        // fallback provider
+        try{
+          const res = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache:'no-store' });
           if (!res.ok) throw new Error('HTTP ' + res.status);
           const txt = await res.text();
-          const parsed = parseCloudflareTrace(txt);
-          const ip = (parsed && parsed.ip) ? String(parsed.ip).trim() : '';
-          if (ip) {
-            renderIP(ip6El, ip); enableCopy(copy6, true);
-            setStatus('IPv6 from Cloudflare trace', true);
-          } else {
-            throw new Error('No IP in trace');
-          }
-        } catch (e2) {
-          ip6El.innerHTML = '<span class="muted">IPv6 unavailable</span>';
-          setStatus('IPv6 error: ' + (e && e.message ? e.message : 'Network error'), false);
-        }
+          const ip = (parseTrace(txt).ip || '').trim();
+          if (isIPv4(ip)) { renderText(ip4El, ip); copy4.disabled = false; setStatus('IPv4 from Cloudflare trace', true); return; }
+          throw new Error('No IPv4 found');
+        }catch(e2){ renderText(ip4El, 'IPv4 unavailable'); setStatus('IPv4 error: ' + (e2.message || 'Network'), false); }
       }
     }
 
-    // ---------- Copy buttons ----------
-    function wireCopy(btn, el, kind) {
-      btn.addEventListener('click', async function() {
-        try {
-          var txt = (el && typeof el.textContent === 'string') ? el.textContent.trim() : '';
-          if (!txt || txt.toLowerCase().indexOf('fetching') !== -1 || txt.toLowerCase().indexOf('unavailable') !== -1) {
-            throw new Error('Nothing to copy yet');
-          }
-          // Very safe character whitelist: digits, hex letters, colon, dot
-          var safe = /^[0-9A-Fa-f:\.]+$/.test(txt);
-          if (!safe) throw new Error('Unexpected characters');
-          await navigator.clipboard.writeText(txt);
-          var prev = statusEl.textContent; statusEl.textContent = 'Copied to clipboard'; statusEl.className = 'status ok';
-          setTimeout(function(){ statusEl.textContent = prev; }, 1200);
-        } catch (err) {
-          statusEl.textContent = 'Copy failed - ' + (err && err.message ? err.message : 'permission denied');
-          statusEl.className = 'status err';
-        }
+    async function fetchV6(){
+      setLoading(ip6El, 'Fetching...'); copy6.disabled = true;
+      try{
+        const ip = await getJSON('https://api64.ipify.org?format=json');
+        if (isIPv6(ip)) { renderText(ip6El, ip); copy6.disabled = false; setStatus('IPv6 fetched from api64.ipify.org', true); return; }
+        throw new Error('Invalid IPv6');
+      }catch(_){
+        try{
+          const res = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache:'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const txt = await res.text();
+          const ip = (parseTrace(txt).ip || '').trim();
+          if (isIPv6(ip)) { renderText(ip6El, ip); copy6.disabled = false; setStatus('IPv6 from Cloudflare trace', true); return; }
+          renderText(ip6El, 'No IPv6 detected'); setStatus('IPv6 unavailable on this connection', false);
+        }catch(e2){ renderText(ip6El, 'IPv6 unavailable'); setStatus('IPv6 error: ' + (e2.message || 'Network'), false); }
+      }
+    }
+
+    // ===== Local device IPs via WebRTC =====
+    function getLocalIPs(){
+      return new Promise((resolve)=>{
+        const found = new Set();
+        const RTCPeerConnectionCtor = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+        if (!RTCPeerConnectionCtor) { resolve([]); return; }
+        const pc = new RTCPeerConnectionCtor({ iceServers: [] });
+        try { pc.createDataChannel(''); } catch(_) { /* ignore */ }
+        pc.onicecandidate = (ev)=>{
+          if (!ev || !ev.candidate) { try{ pc.close(); }catch(_){} resolve([...found]); return; }
+          const c = String(ev.candidate.candidate || '');
+          // Typical format: candidate:0 1 UDP 2122252543 192.168.1.10 57362 typ host
+          const parts = c.split(' ');
+          const addr = parts[4];
+          if (!addr) return;
+          // Collect private IPv4 and common local IPv6
+          if (isPrivateIPv4(addr) || isLocalIPv6(addr)) { found.add(addr); }
+        };
+        pc.createOffer().then(offer => pc.setLocalDescription(offer)).catch(()=> resolve([]));
+        // Safety timeout
+        setTimeout(()=>{ try{ pc.close(); }catch(_){} resolve([...found]); }, 7000);
       });
     }
 
+    async function fetchLocal(){
+      setLoading(ipLocalEl, 'Detecting...'); copyLocal.disabled = true;
+      try{
+        const ips = await getLocalIPs();
+        if (ips && ips.length){ renderText(ipLocalEl, ips.join(', ')); copyLocal.disabled = false; setStatus('Local IPs detected via WebRTC', true); }
+        else { renderText(ipLocalEl, 'No local IP detected'); setStatus('Local IP not exposed by browser', false); }
+      }catch(e){ renderText(ipLocalEl, 'Local IP unavailable'); setStatus('Local IP error: ' + (e.message || 'Unknown'), false); }
+    }
+
+    // ===== Copy handling (safe) =====
+    function safeCopy(text){
+      const t = (text || '').trim();
+      if (!t || /fetching|unavailable|detected/i.test(t)) throw new Error('Nothing to copy');
+      // Only allow digits, hex letters, colon, dot, comma, space
+      if (!/^[0-9A-Fa-f:\.,\s]+$/.test(t)) throw new Error('Unexpected characters');
+      if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
+      // Fallback
+      const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.top='-9999px'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); } finally { document.body.removeChild(ta); }
+    }
+
+    function wireCopy(btn, el){ btn.addEventListener('click', async ()=>{ try{ await safeCopy(el.textContent); const prev=statusEl.textContent; setStatus('Copied to clipboard', true); setTimeout(()=> setStatus(prev || '', true), 1200); }catch(err){ setStatus('Copy failed - ' + (err.message || 'permission denied'), false); } }); }
+
     refresh4.addEventListener('click', fetchV4);
     refresh6.addEventListener('click', fetchV6);
+    refreshLocal.addEventListener('click', fetchLocal);
     wireCopy(copy4, ip4El);
     wireCopy(copy6, ip6El);
+    wireCopy(copyLocal, ipLocalEl);
 
-    // ---------- Tests ----------
+    // ===== Diagnostics =====
     const runBtn = $('run-tests');
     const logEl = $('test-log');
-    function log(line = '') { logEl.textContent += line + '\n'; }
-    function clearLog() { logEl.textContent = ''; }
-    function assert(name, condition) {
-      log((condition ? '✅ ' : '❌ ') + name);
-      if (!condition) { console.error('Test failed:', name); }
-    }
+    function log(line=''){ logEl.textContent += line + '\n'; }
+    function clearLog(){ logEl.textContent = ''; }
+    function assert(name, cond){ log((cond ? 'OK ' : 'FAIL ') + name); if (!cond) console.error('Test failed:', name); }
 
-    function runTests() {
+    function runTests(){
       clearLog();
       log('Running basic tests...');
-      // IPv4 tests
-      assert('IPv4 valid 203.0.113.45', isValidIPv4('203.0.113.45'));
-      assert('IPv4 invalid 999.1.2.3', !isValidIPv4('999.1.2.3'));
-      // IPv6 tests (heuristics)
-      assert('IPv6 plausible 2a00:23c7:8000:f701:71b3:2e82:d646:77ca', isPlausibleIPv6('2a00:23c7:8000:f701:71b3:2e82:d646:77ca'));
-      assert('IPv6 not plausible abc:def:ghi', !isPlausibleIPv6('abc:def:ghi'));
-      // Cloudflare trace parsing
-      const sampleTrace = 'fl=29f102\nip=2001:db8::1\nproto=h2\n\n';
-      const parsed = parseCloudflareTrace(sampleTrace);
+      assert('IPv4 valid 203.0.113.45', isIPv4('203.0.113.45'));
+      assert('IPv4 invalid 999.1.2.3', !isIPv4('999.1.2.3'));
+      assert('Private IPv4 192.168.1.2', isPrivateIPv4('192.168.1.2'));
+      assert('IPv6 plausible 2a00:23c7:8000:f701:71b3:2e82:d646:77ca', isIPv6('2a00:23c7:8000:f701:71b3:2e82:d646:77ca'));
+      assert('IPv6 loopback ::1', isIPv6('::1'));
+      assert('Local IPv6 fe80::1 flagged local', isLocalIPv6('fe80::1'));
+      const sampleTrace = 'fl=29f102\nip=2001:db8::1\nproto=h2\n';
+      const parsed = parseTrace(sampleTrace);
       assert('Trace has ip key', !!parsed.ip);
       assert('Trace ip equals 2001:db8::1', parsed.ip === '2001:db8::1');
-      // Copy guards (do not actually write to clipboard)
-      assert('Plausible IP passes isPlausibleIP', isPlausibleIP('127.0.0.1'));
-      assert('Non-IP rejected by isPlausibleIP', !isPlausibleIP('Fetching...'));
+      assert('Copy guard rejects placeholder', (()=>{ try{ safeCopy('Fetching...'); return false; }catch(_){ return true; } })());
       log('Done.');
     }
-
     if (runBtn) runBtn.addEventListener('click', runTests);
 
-    // ---------- Kickoff ----------
+    // ===== Global error instrumentation =====
+    (function(){
+      const prevWrite = document.write;
+      document.write = function(){
+        try { throw new Error('document.write() call detected'); }
+        catch (e) {
+          console.warn('Blocked document.write; args:', arguments, e);
+          setStatus('A script tried to use document.write (blocked). If you see this, a browser extension may be injecting code.', false);
+        }
+      };
+      window.addEventListener('error', function(e){
+        const src = (e && e.filename) ? (' @ ' + e.filename + ':' + e.lineno + ':' + e.colno) : '';
+        setStatus('JS error: ' + (e && e.message ? e.message : 'unknown') + src, false);
+      });
+      window.addEventListener('unhandledrejection', function(e){
+        const msg = e && e.reason ? (e.reason.message || String(e.reason)) : 'unknown';
+        setStatus('Unhandled promise rejection: ' + msg, false);
+      });
+    })();
+
+    // Kick off
     fetchV4();
     fetchV6();
+    fetchLocal();
   </script>
 </body>
 </html>

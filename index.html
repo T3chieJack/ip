@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>What’s My IP?</title>
+  <meta name="description" content="A tiny, privacy-friendly page that shows your public IP address.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🖥️</text></svg>">
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card: #121826;
+      --text: #e6edf3;
+      --muted: #9fb1c1;
+      --accent: #4f8cff;
+      --accent-2: #71d2ff;
+      --ring: rgba(79,140,255,0.4);
+      --danger: #ff6166;
+    }
+    @media (prefers-color-scheme: light) {
+      :root { --bg:#f4f7fb; --card:#ffffff; --text:#0b0f17; --muted:#5a6b79; --ring:rgba(79,140,255,0.25); }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 10% -10%, rgba(79,140,255,0.20), transparent 60%),
+                  radial-gradient(900px 700px at 110% 110%, rgba(113,210,255,0.20), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      display: grid; place-items:center; padding: 24px;
+    }
+    .card {
+      width: 100%; max-width: 720px; background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)) , var(--card);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      padding: 28px; position: relative; overflow: hidden;
+    }
+    .card::after { content:""; position:absolute; inset:-1px; border-radius: 24px; padding:1px; background: linear-gradient(120deg, rgba(79,140,255,.55), rgba(113,210,255,.25), transparent 60%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+    h1 { font-size: clamp(22px, 2.6vw, 28px); margin:0; letter-spacing:.2px; }
+    .muted { color: var(--muted); font-size: 14px; }
+    .ip {
+      font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: .3px;
+      font-size: clamp(28px, 6.5vw, 56px); line-height: 1.1; margin: 10px 0 16px;
+      word-break: break-word;
+    }
+    .btns { display:flex; flex-wrap:wrap; gap:10px; }
+    button {
+      appearance: none; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: var(--text);
+      padding: 10px 14px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: transform .05s ease, border-color .2s ease, background .2s ease;
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    button:hover { border-color: var(--accent); }
+    button:active { transform: translateY(1px); }
+    .primary { background: linear-gradient(180deg, rgba(79,140,255,.22), rgba(79,140,255,.14)); border-color: var(--accent); }
+    .status { margin-top: 10px; min-height: 22px; }
+    .status.ok { color: var(--muted); }
+    .status.err { color: var(--danger); }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 6px; border:1px solid rgba(255,255,255,.15); }
+    .footer { margin-top: 22px; font-size: 13px; color: var(--muted); display:flex; gap:12px; flex-wrap:wrap; }
+    .spin { width: 1em; height: 1em; border-radius: 999px; border: 3px solid rgba(255,255,255,.2); border-top-color: var(--accent); animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  </style>
+</head>
+<body>
+  <main class="card" role="main" aria-live="polite">
+    <header>
+      <h1>What’s My IP?</h1>
+      <div class="muted">Client-side only • No logs</div>
+    </header>
+
+    <section aria-labelledby="v4-heading">
+      <h2 id="v4-heading" class="sr-only">IPv4</h2>
+      <div class="muted">Your IPv4 address</div>
+      <div id="ip4" class="ip"><span class="spin" aria-hidden="true"></span> <span class="muted">Fetching…</span></div>
+      <div class="btns">
+        <button id="copy4" class="primary" disabled>Copy IPv4</button>
+        <button id="refresh4">Refresh IPv4</button>
+      </div>
+    </section>
+
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:18px 0;"/>
+
+    <section aria-labelledby="v6-heading">
+      <h2 id="v6-heading" class="sr-only">IPv6</h2>
+      <div class="muted">Your IPv6 address</div>
+      <div id="ip6" class="ip"><span class="spin" aria-hidden="true"></span> <span class="muted">Fetching…</span></div>
+      <div class="btns">
+        <button id="copy6" class="primary" disabled>Copy IPv6</button>
+        <button id="refresh6">Refresh IPv6</button>
+      </div>
+    </section>
+
+    <div id="status" class="status ok" role="status"></div>
+
+    <div class="footer">
+      <div>Powered by <span class="kbd">fetch()</span> + <a href="https://www.ipify.org/" target="_blank" rel="noopener">ipify</a>.</div>
+      <div>Open source — view <a href="https://github.com/" target="_blank" rel="noopener">source</a>.</div>
+    </div>
+  </main>
+
+  <script>
+    // Fetch and display IPv4 and IPv6 separately. Works on GitHub Pages (no server).
+    const ip4El = document.getElementById('ip4');
+    const ip6El = document.getElementById('ip6');
+    const statusEl = document.getElementById('status');
+
+    const copy4 = document.getElementById('copy4');
+    const copy6 = document.getElementById('copy6');
+    const refresh4 = document.getElementById('refresh4');
+    const refresh6 = document.getElementById('refresh6');
+
+    function setLoading(el, on) {
+      if (on) {
+        el.innerHTML = '<span class="spin" aria-hidden="true"></span> <span class="muted">Fetching…</span>';
+      }
+    }
+
+    function renderIP(el, ip) { el.textContent = ip; }
+
+    async function getJSON(url) {
+      const res = await fetch(url, { cache: 'no-store', headers: { 'Accept': 'application/json' } });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!data || !data.ip) throw new Error('Bad response');
+      return data.ip;
+    }
+
+    async function fetchV4() {
+      setLoading(ip4El, true); copy4.disabled = true;
+      try {
+        const ip = await getJSON('https://api.ipify.org?format=json');
+        renderIP(ip4El, ip); copy4.disabled = false;
+        statusEl.textContent = 'IPv4 fetched from api.ipify.org';
+        statusEl.className = 'status ok';
+      } catch (e) {
+        ip4El.innerHTML = '<span class="muted">IPv4 unavailable</span>';
+        statusEl.textContent = 'IPv4 error: ' + (e?.message || 'Network error');
+        statusEl.className = 'status err';
+      }
+    }
+
+    async function fetchV6() {
+      setLoading(ip6El, true); copy6.disabled = true;
+      try {
+        const ip = await getJSON('https://api64.ipify.org?format=json'); // handles IPv4+IPv6 but we label as v6
+        // If the value looks like IPv4 but user has no IPv6, keep it, else it's fine. We still show what the endpoint returns.
+        renderIP(ip6El, ip); copy6.disabled = false;
+        statusEl.textContent = 'IPv6 fetched from api64.ipify.org';
+        statusEl.className = 'status ok';
+      } catch (e) {
+        // Try Cloudflare trace as a last resort
+        try {
+          const res = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const txt = await res.text();
+          const parsed = Object.fromEntries(txt.split('
+').map(l => l.split('=')));
+          if (parsed.ip) { renderIP(ip6El, parsed.ip); copy6.disabled = false; statusEl.textContent = 'IPv6 from Cloudflare trace'; statusEl.className = 'status ok'; return; }
+          throw new Error('No IP in trace');
+        } catch (e2) {
+          ip6El.innerHTML = '<span class="muted">IPv6 unavailable</span>';
+          statusEl.textContent = 'IPv6 error: ' + (e?.message || 'Network error');
+          statusEl.className = 'status err';
+        }
+      }
+    }
+
+    function wireCopy(btn, el) {
+      btn.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(el.textContent.trim());
+          const prev = statusEl.textContent; statusEl.textContent = 'Copied to clipboard'; statusEl.className = 'status ok';
+          setTimeout(() => (statusEl.textContent = prev), 1200);
+        } catch (err) {
+          statusEl.textContent = 'Copy failed — ' + (err?.message || 'permission denied'); statusEl.className = 'status err';
+        }
+      });
+    }
+
+    refresh4.addEventListener('click', fetchV4);
+    refresh6.addEventListener('click', fetchV6);
+    wireCopy(copy4, ip4El);
+    wireCopy(copy6, ip6El);
+
+    // Kick off both
+    fetchV4();
+    fetchV6();
+  </script>
+</body>
+</html>

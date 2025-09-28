@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>What’s My IP?</title>
-  <meta name="description" content="A tiny, privacy-friendly page that shows your public IP address.">
+  <meta name="description" content="A tiny, privacy-friendly page that shows your public IPv4 and IPv6 addresses.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🖥️</text></svg>">
   <style>
     :root {
@@ -31,7 +31,7 @@
       display: grid; place-items:center; padding: 24px;
     }
     .card {
-      width: 100%; max-width: 720px; background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)) , var(--card);
+      width: 100%; max-width: 760px; background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)) , var(--card);
       border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.35);
       padding: 28px; position: relative; overflow: hidden;
     }
@@ -58,9 +58,12 @@
     .status.err { color: var(--danger); }
     .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 6px; border:1px solid rgba(255,255,255,.15); }
     .footer { margin-top: 22px; font-size: 13px; color: var(--muted); display:flex; gap:12px; flex-wrap:wrap; }
-    .spin { width: 1em; height: 1em; border-radius: 999px; border: 3px solid rgba(255,255,255,.2); border-top-color: var(--accent); animation: spin 1s linear infinite; }
+    .spin { width: 1em; height: 1em; border-radius: 999px; border: 3px solid rgba(255,255,255,.2); border-top-color: var(--accent); animation: spin 1s linear infinite; display:inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    hr { border:none; border-top:1px solid rgba(255,255,255,0.08); margin:18px 0; }
+    details { margin-top: 16px; }
+    details pre { background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; overflow:auto; }
   </style>
 </head>
 <body>
@@ -73,19 +76,19 @@
     <section aria-labelledby="v4-heading">
       <h2 id="v4-heading" class="sr-only">IPv4</h2>
       <div class="muted">Your IPv4 address</div>
-      <div id="ip4" class="ip"><span class="spin" aria-hidden="true"></span> <span class="muted">Fetching…</span></div>
+      <div id="ip4" class="ip"><span class="spin" aria-hidden="true"></span> <span class="muted">Fetching...</span></div>
       <div class="btns">
         <button id="copy4" class="primary" disabled>Copy IPv4</button>
         <button id="refresh4">Refresh IPv4</button>
       </div>
     </section>
 
-    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:18px 0;"/>
+    <hr />
 
     <section aria-labelledby="v6-heading">
       <h2 id="v6-heading" class="sr-only">IPv6</h2>
       <div class="muted">Your IPv6 address</div>
-      <div id="ip6" class="ip"><span class="spin" aria-hidden="true"></span> <span class="muted">Fetching…</span></div>
+      <div id="ip6" class="ip"><span class="spin" aria-hidden="true"></span> <span class="muted">Fetching...</span></div>
       <div class="btns">
         <button id="copy6" class="primary" disabled>Copy IPv6</button>
         <button id="refresh6">Refresh IPv6</button>
@@ -94,6 +97,15 @@
 
     <div id="status" class="status ok" role="status"></div>
 
+    <details>
+      <summary>Diagnostics & tests</summary>
+      <div class="muted" style="margin:8px 0">This section runs small client-side tests to ensure parsing and copy guards work.</div>
+      <div class="btns" style="margin-bottom:8px">
+        <button id="run-tests">Run tests</button>
+      </div>
+      <pre id="test-log" aria-live="polite"></pre>
+    </details>
+
     <div class="footer">
       <div>Powered by <span class="kbd">fetch()</span> + <a href="https://www.ipify.org/" target="_blank" rel="noopener">ipify</a>.</div>
       <div>Open source — view <a href="https://github.com/" target="_blank" rel="noopener">source</a>.</div>
@@ -101,79 +113,138 @@
   </main>
 
   <script>
-    // Fetch and display IPv4 and IPv6 separately. Works on GitHub Pages (no server).
-    const ip4El = document.getElementById('ip4');
-    const ip6El = document.getElementById('ip6');
-    const statusEl = document.getElementById('status');
+    // ---------- Utilities ----------
+    const $ = (id) => document.getElementById(id);
+    const ip4El = $('ip4');
+    const ip6El = $('ip6');
+    const statusEl = $('status');
+    const copy4 = $('copy4');
+    const copy6 = $('copy6');
+    const refresh4 = $('refresh4');
+    const refresh6 = $('refresh6');
 
-    const copy4 = document.getElementById('copy4');
-    const copy6 = document.getElementById('copy6');
-    const refresh4 = document.getElementById('refresh4');
-    const refresh6 = document.getElementById('refresh6');
-
-    function setLoading(el, on) {
-      if (on) {
-        el.innerHTML = '<span class="spin" aria-hidden="true"></span> <span class="muted">Fetching…</span>';
-      }
+    function setLoading(el) {
+      el.innerHTML = '<span class="spin" aria-hidden="true"></span> <span class="muted">Fetching...</span>';
     }
 
-    function renderIP(el, ip) { el.textContent = ip; }
+    function renderIP(el, ip) {
+      el.textContent = ip;
+    }
 
-    async function getJSON(url) {
-      const res = await fetch(url, { cache: 'no-store', headers: { 'Accept': 'application/json' } });
+    function setStatus(msg, ok = true) {
+      statusEl.textContent = msg;
+      statusEl.className = 'status ' + (ok ? 'ok' : 'err');
+    }
+
+    function isValidIPv4(ip) {
+      // 0-255.0-255.0-255.0-255
+      const re = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+      return re.test(ip);
+    }
+
+    function isPlausibleIPv6(ip) {
+      // Heuristic: contains ':' and only hex, ':', or dots (to allow v4-mapped)
+      return typeof ip === 'string' && ip.length >= 2 && ip.length <= 100 && /:/.test(ip) && /^[0-9A-Fa-f:.]+$/.test(ip);
+    }
+
+    function isPlausibleIP(ip) {
+      return isValidIPv4(ip) || isPlausibleIPv6(ip);
+    }
+
+    async function getJSON(url, { timeoutMs = 8000 } = {}) {
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), timeoutMs);
+      const res = await fetch(url, { cache: 'no-store', headers: { 'Accept': 'application/json' }, signal: ctl.signal });
+      clearTimeout(t);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
-      if (!data || !data.ip) throw new Error('Bad response');
-      return data.ip;
+      if (!data || typeof data.ip !== 'string' || !data.ip) throw new Error('Bad response');
+      return data.ip.trim();
     }
 
+    function parseCloudflareTrace(text) {
+      const lines = String(text).split(/\r?\n/);
+      const entries = lines
+        .map((l) => l.includes('=') ? l.split('=') : null)
+        .filter(Boolean);
+      const obj = Object.fromEntries(entries);
+      return obj;
+    }
+
+    function enableCopy(btn, on) { btn.disabled = !on; }
+
+    async function copyTextSafe(text) {
+      if (typeof text !== 'string') throw new Error('No text');
+      const toCopy = text.trim();
+      if (!toCopy) throw new Error('Nothing to copy');
+      if (!isPlausibleIP(toCopy)) throw new Error('Not an IP address');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(toCopy);
+      }
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = toCopy; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.top = '-9999px';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } finally { document.body.removeChild(ta); }
+    }
+
+    // ---------- Fetchers ----------
     async function fetchV4() {
-      setLoading(ip4El, true); copy4.disabled = true;
+      setLoading(ip4El); enableCopy(copy4, false);
       try {
         const ip = await getJSON('https://api.ipify.org?format=json');
-        renderIP(ip4El, ip); copy4.disabled = false;
-        statusEl.textContent = 'IPv4 fetched from api.ipify.org';
-        statusEl.className = 'status ok';
+        renderIP(ip4El, ip); enableCopy(copy4, true);
+        setStatus('IPv4 fetched from api.ipify.org', true);
       } catch (e) {
         ip4El.innerHTML = '<span class="muted">IPv4 unavailable</span>';
-        statusEl.textContent = 'IPv4 error: ' + (e?.message || 'Network error');
-        statusEl.className = 'status err';
+        setStatus('IPv4 error: ' + (e && e.message ? e.message : 'Network error'), false);
       }
     }
 
     async function fetchV6() {
-      setLoading(ip6El, true); copy6.disabled = true;
+      setLoading(ip6El); enableCopy(copy6, false);
       try {
-        const ip = await getJSON('https://api64.ipify.org?format=json'); // handles IPv4+IPv6 but we label as v6
-        // If the value looks like IPv4 but user has no IPv6, keep it, else it's fine. We still show what the endpoint returns.
-        renderIP(ip6El, ip); copy6.disabled = false;
-        statusEl.textContent = 'IPv6 fetched from api64.ipify.org';
-        statusEl.className = 'status ok';
+        const ip = await getJSON('https://api64.ipify.org?format=json'); // returns v6 on IPv6 networks; may return v4 otherwise
+        renderIP(ip6El, ip); enableCopy(copy6, true);
+        setStatus('IPv6 fetched from api64.ipify.org', true);
       } catch (e) {
-        // Try Cloudflare trace as a last resort
+        // Fallback: Cloudflare trace (text)
         try {
           const res = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache: 'no-store' });
           if (!res.ok) throw new Error('HTTP ' + res.status);
           const txt = await res.text();
-          const parsed = Object.fromEntries(txt.split('
-').map(l => l.split('=')));
-          if (parsed.ip) { renderIP(ip6El, parsed.ip); copy6.disabled = false; statusEl.textContent = 'IPv6 from Cloudflare trace'; statusEl.className = 'status ok'; return; }
-          throw new Error('No IP in trace');
+          const parsed = parseCloudflareTrace(txt);
+          const ip = (parsed && parsed.ip) ? String(parsed.ip).trim() : '';
+          if (ip) {
+            renderIP(ip6El, ip); enableCopy(copy6, true);
+            setStatus('IPv6 from Cloudflare trace', true);
+          } else {
+            throw new Error('No IP in trace');
+          }
         } catch (e2) {
           ip6El.innerHTML = '<span class="muted">IPv6 unavailable</span>';
-          statusEl.textContent = 'IPv6 error: ' + (e?.message || 'Network error');
-          statusEl.className = 'status err';
+          setStatus('IPv6 error: ' + (e && e.message ? e.message : 'Network error'), false);
         }
       }
     }
 
-    function wireCopy(btn, el) {
-      btn.addEventListener('click', async () => {
-        try { await navigator.clipboard.writeText(el.textContent.trim());
-          const prev = statusEl.textContent; statusEl.textContent = 'Copied to clipboard'; statusEl.className = 'status ok';
-          setTimeout(() => (statusEl.textContent = prev), 1200);
+    // ---------- Copy buttons ----------
+    function wireCopy(btn, el, kind) {
+      btn.addEventListener('click', async function() {
+        try {
+          var txt = (el && typeof el.textContent === 'string') ? el.textContent.trim() : '';
+          if (!txt || txt.toLowerCase().indexOf('fetching') !== -1 || txt.toLowerCase().indexOf('unavailable') !== -1) {
+            throw new Error('Nothing to copy yet');
+          }
+          // Very safe character whitelist: digits, hex letters, colon, dot
+          var safe = /^[0-9A-Fa-f:\.]+$/.test(txt);
+          if (!safe) throw new Error('Unexpected characters');
+          await navigator.clipboard.writeText(txt);
+          var prev = statusEl.textContent; statusEl.textContent = 'Copied to clipboard'; statusEl.className = 'status ok';
+          setTimeout(function(){ statusEl.textContent = prev; }, 1200);
         } catch (err) {
-          statusEl.textContent = 'Copy failed — ' + (err?.message || 'permission denied'); statusEl.className = 'status err';
+          statusEl.textContent = 'Copy failed - ' + (err && err.message ? err.message : 'permission denied');
+          statusEl.className = 'status err';
         }
       });
     }
@@ -183,7 +254,39 @@
     wireCopy(copy4, ip4El);
     wireCopy(copy6, ip6El);
 
-    // Kick off both
+    // ---------- Tests ----------
+    const runBtn = $('run-tests');
+    const logEl = $('test-log');
+    function log(line = '') { logEl.textContent += line + '\n'; }
+    function clearLog() { logEl.textContent = ''; }
+    function assert(name, condition) {
+      log((condition ? '✅ ' : '❌ ') + name);
+      if (!condition) { console.error('Test failed:', name); }
+    }
+
+    function runTests() {
+      clearLog();
+      log('Running basic tests...');
+      // IPv4 tests
+      assert('IPv4 valid 203.0.113.45', isValidIPv4('203.0.113.45'));
+      assert('IPv4 invalid 999.1.2.3', !isValidIPv4('999.1.2.3'));
+      // IPv6 tests (heuristics)
+      assert('IPv6 plausible 2a00:23c7:8000:f701:71b3:2e82:d646:77ca', isPlausibleIPv6('2a00:23c7:8000:f701:71b3:2e82:d646:77ca'));
+      assert('IPv6 not plausible abc:def:ghi', !isPlausibleIPv6('abc:def:ghi'));
+      // Cloudflare trace parsing
+      const sampleTrace = 'fl=29f102\nip=2001:db8::1\nproto=h2\n\n';
+      const parsed = parseCloudflareTrace(sampleTrace);
+      assert('Trace has ip key', !!parsed.ip);
+      assert('Trace ip equals 2001:db8::1', parsed.ip === '2001:db8::1');
+      // Copy guards (do not actually write to clipboard)
+      assert('Plausible IP passes isPlausibleIP', isPlausibleIP('127.0.0.1'));
+      assert('Non-IP rejected by isPlausibleIP', !isPlausibleIP('Fetching...'));
+      log('Done.');
+    }
+
+    if (runBtn) runBtn.addEventListener('click', runTests);
+
+    // ---------- Kickoff ----------
     fetchV4();
     fetchV6();
   </script>
